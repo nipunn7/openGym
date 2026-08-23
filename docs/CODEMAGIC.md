@@ -1,4 +1,4 @@
-# Shipping openGym to your iPhone via Codemagic + TestFlight
+# Shipping OpenGymN to your iPhone via Codemagic + TestFlight
 
 This builds the **standalone** flavour of openGym — the Capacitor app described in
 [MOBILE.md](MOBILE.md). It talks to **no backend at all**: no account, no sync, no

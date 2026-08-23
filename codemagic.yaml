@@ -1,4 +1,4 @@
-# openGym — iOS build + TestFlight
+# OpenGymN — iOS build + TestFlight
 #
 # Builds the STANDALONE Capacitor flavour of openGym (VITE_MOBILE=1: no backend,
 # no accounts, no sync — data lives on the device) and ships it to TestFlight.
@@ -17,7 +17,7 @@
 
 workflows:
   ios-testflight:
-    name: openGym — iOS build + TestFlight
+    name: OpenGymN — iOS build + TestFlight
     instance_type: mac_mini_m2          # free-tier Apple-silicon macOS runner
     max_build_duration: 60
 
