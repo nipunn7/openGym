@@ -47,11 +47,14 @@ workflows:
       vars:
         XCODE_WORKSPACE: "frontend/ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
-        # Optional. Numeric "Apple ID" of the app record in App Store Connect
-        # (App Information → General Information). When set, the build number is
-        # derived from the newest build already on TestFlight. Leave empty on the
-        # first run — the workflow falls back to Codemagic's own counter.
-        APP_STORE_APPLE_ID: ""
+        # OPTIONAL — deliberately absent, not blank. Codemagic rejects empty-string
+        # vars, so this is omitted rather than set to "". Without it the build
+        # number comes from Codemagic's own counter, which is fine.
+        #
+        # To derive the build number from the newest build already on TestFlight,
+        # uncomment and set the numeric "Apple ID" of the app record (App Store
+        # Connect -> your app -> App Information -> General Information):
+        #   APP_STORE_APPLE_ID: 1234567890
       node: 20
       xcode: latest
       cocoapods: default
