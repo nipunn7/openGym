@@ -486,3 +486,57 @@ export function parseVitals(input) {
   }
   return out
 }
+
+/* ---------------------------------------------------------------- swap -- */
+
+// Equipment strings in the library that each gear key covers, for exercises the coach
+// did not pick (your own routines): a cable row is fine if you ticked the cable station.
+const GEAR_EQ = { barbell: ['barbell', 'olympic barbell', 'trap bar'], dumbbell: ['dumbbell'], ezbar: ['ez barbell'], cable: ['cable'], smith: ['smith machine'], legpress: ['sled machine'], hacksquat: ['sled machine'] }
+
+/**
+ * Other exercises for the same job — "the leg press is taken, what else?".
+ * Coach exercises: the other options for that movement your gym has, best first.
+ * Anything else: same target muscle and body part, preferring equipment you have.
+ * Returns [{ id, fits }] — `fits` is false for options needing gear you haven't ticked.
+ */
+export function alternativesFor(exId, gear, experience = 'beginner', limit = 8) {
+  const slots = Object.keys(SLOTS).filter(k => k !== 'cardio' && SLOTS[k].some(c => c[0] === exId))
+  if (slots.length) {
+    const seen = new Set([exId])
+    const out = []
+    for (const s of slots) for (const o of optionsFor(s, gear, experience)) {
+      if (!seen.has(o.id)) { seen.add(o.id); out.push({ id: o.id, fits: true }) }
+    }
+    return out.slice(0, limit)
+  }
+  const ex = EXIDX[exId]
+  if (!ex) return []
+  const eqs = new Set(['body weight', ...(gear || []).flatMap(g => GEAR_EQ[g] || [])])
+  const hasGear = (gear || []).length > 0
+  return Object.values(EXIDX)
+    .filter(e => e.id !== exId && e.tg === ex.tg && e.bp === ex.bp && !e.missing)
+    .map(e => ({ id: e.id, fits: !hasGear || eqs.has(e.eq) }))
+    .sort((a, b) => (b.fits - a.fits) || (EXIDX[a.id].n < EXIDX[b.id].n ? -1 : 1))
+    .slice(0, limit)
+}
+
+/**
+ * The plan entry for `newId` replacing `cfg`: same sets, reps and progression rule, and a
+ * first-session weight guess if the coach knows the exercise (0 otherwise). History beats
+ * the guess anyway — buildSets starts from your last logged weight when there is one.
+ */
+export function swapConfig(cfg, newId, { bodyweight, profile, unit = 'kg' } = {}) {
+  const ex = EXIDX[newId] || {}
+  const out = { ...cfg, id: newId }
+  delete out.sg
+  if (ex.eq === 'body weight') {
+    out.bodyweight = true
+    out.weight = 0
+    if (!out.repsMax) out.repsMax = HARD_BW.includes(newId) ? 12 : 20
+    return out
+  }
+  delete out.bodyweight
+  const cand = Object.values(SLOTS).flat().find(c => c[0] === newId)
+  out.weight = cand ? startWeight({ ratio: cand[2], exId: newId, reps: cfg.reps, bodyweight, profile, unit }) : 0
+  return out
+}

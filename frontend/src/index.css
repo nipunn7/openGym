@@ -929,3 +929,6 @@ h4.sec{
 .coach-ex{display:flex;gap:10px;align-items:center;padding:10px 2px;border-bottom:1px solid var(--sep);cursor:pointer}
 .coach-ex:last-child{border-bottom:0}
 .coach-dose{flex:none;font-weight:600;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.coach-ci{display:flex;gap:12px;align-items:center;cursor:pointer}
+.coach-swap{width:32px;height:32px;font-size:15px;flex:none}
+.coach-ring{flex:none}

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from './store/useStore.js'
 import { useUI } from './store/useUI.js'
-import { EXDB, EXIDX, BODYPARTS, isCardio, isBodyweightEq, allExercises, equipmentOf } from './lib/exercises.js'
+import { EXDB, EXIDX, BODYPARTS, isCardio, isBodyweightEq, allExercises, equipmentOf, exOr } from './lib/exercises.js'
 import { fmtDate, fmtNum, fmtVol, fmtDur, durPart, todayISO, uid, exCount, DAYN, MONTHS_LONG, ACCENTS } from './lib/format.js'
 import { lastEntryFor, bestWeightFor, buildSets, effectiveRoutineId, workoutVolume, setsDone, setsDoneActive, lastBW, supersetUnits, unitOf, setLabel, defaultConfig, cleanupSg, modeOf, effortOf, isBw, isPerSide, sideReps } from './lib/history.js'
 import { beep, vibrate } from './lib/sound.js'
@@ -20,7 +20,7 @@ import { buildPlanBundle, parsePlan, mergePlan, printPlan } from './lib/plan-sha
 import { estimate1RM, best1RM, is1RMRecord, REP_CAP } from './lib/onerm.js'
 import { nextPrescription, applyPrescription, policyFor, defaultIncrement, POLICIES_FOR, POLICY_NAME, POLICY_DESC, MAX_BW_SETS } from './lib/progression.js'
 import { MOBILE, shareExport } from './lib/mobile.js'
-import { sessionAdjust, adjustEntries } from './lib/coach.js'
+import { sessionAdjust, adjustEntries, alternativesFor, coachOf } from './lib/coach.js'
 
 const S = () => useStore.getState().S
 const update = (...a) => useStore.getState().update(...a)
@@ -702,6 +702,30 @@ function PlanImport({ bundle, close }) {
     <Button variant="ghost" className="dim" onClick={close}>{t('Cancel')}</Button>
   </>
 }
+
+/* ============================ swap exercise ============================ */
+// "The leg press is taken." Same job, different exercise. In a workout the swap is for today
+// unless you keep it; from the Coach page it changes the plan.
+function SwapSheet({ exId, inWorkout, onPick, close }) {
+  const st = useStore(s => s.S)
+  const C = coachOf(st)
+  const [keep, setKeep] = useState(false)
+  const alts = alternativesFor(exId, C.gear, C.profile.experience, 10)
+  return <>
+    <h3 className="capitalize">{t('Swap {0}', exOr(exId).n)}</h3>
+    <div className="muted small" style={{ marginBottom: 10 }}>{inWorkout ? t('Machine taken or not feeling it? Same muscles, different exercise — just for today.') : t('Picks a different exercise for this slot in your plan, from now on.')}</div>
+    {inWorkout && <div className="sect-b" style={{ marginBottom: 10 }}><Row title={t('Keep the swap in my plan')}><Switch checked={keep} onChange={setKeep} /></Row></div>}
+    {alts.length ? <div className="list">{alts.map(a => {
+      const ex = EXIDX[a.id]
+      return <div key={a.id} className="item" onClick={() => { close(); onPick(a.id, keep) }}>
+        <Thumb ex={ex} />
+        <div className="grow"><div className="tt capitalize">{ex.n}</div><div className="ss capitalize">{ex.eq}{!a.fits ? ' · ' + t('not in your gym list') : ''}</div></div>
+        <Icon name="shuffle" className="chev" />
+      </div>
+    })}</div> : <div className="empty">{t('No alternatives with your equipment. Add more in Coach → Edit.')}</div>}
+  </>
+}
+export const swapSheet = (exId, onPick, inWorkout) => ui().openSheet(close => <SwapSheet exId={exId} inWorkout={inWorkout} onPick={onPick} close={close} />)
 
 /* ============================ day override / assign ============================ */
 function DayOverride({ iso, close }) {

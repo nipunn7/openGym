@@ -26,6 +26,16 @@ your gym once; after that it tells you what to do each day, and how much.
      them), never with population averages.
    - More than 14 days since your last workout → weights eased 10% for the first session back.
 
+6. **Swap an exercise.** Machine taken? Tap the shuffle button on an exercise during a
+   workout to swap it for another that does the same job. That's for today only, unless
+   you turn on "keep the swap in my plan". Swapping from the Coach page changes the plan.
+   Only equipment you've ticked is offered.
+7. **Weekly review.** Sessions done vs planned (ring), time, volume, which lifts got
+   stronger (top weight vs. everything before that week), sets per body part, and one tip
+   for next week. Monday and Tuesday open on last week's review.
+8. **Home is the coach screen.** With the coach on, Home shows the check-in, today's session
+   and the weekly review first. The check-in shrinks to one line once saved.
+
 The plans it builds are normal routines. You can open any of them in the **Plan** tab and swap
 an exercise, change sets or reps, or delete one.
 
@@ -86,6 +96,7 @@ install on your phone, so it isn't done here.
 - `frontend/src/lib/coach.js`: equipment list, exercise choices per movement, plan generator,
   rotation scheduling, readiness rules, vitals parsing (pure functions).
 - `frontend/src/lib/coach.test.js`: tests for all of the above.
-- `frontend/src/views/Coach.jsx`: the Coach tab.
+- `frontend/src/lib/review.js` (+ tests): the weekly review.
+- `frontend/src/views/Coach.jsx`: the Coach tab, plus the cards Home reuses.
 - `history.js` `effectiveRoutineId`: uses the rotation while the coach is on.
 - `sheets.jsx` `beginWorkout`: applies the lighter-day / comeback adjustment.

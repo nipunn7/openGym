@@ -7,11 +7,12 @@ import { buildSets, effectiveRoutine, lastBW, modeOf, isBw } from '../lib/histor
 import { nextPrescription, applyPrescription } from '../lib/progression.js'
 import {
   GEAR, GEAR_GROUPS, GOALS, LEVELS, coachOf, generatePlan, splitFor, readiness, sessionAdjust, adjustEntries,
-  missedDays, daysSinceWorkout, upcoming, parseVitals, baseline,
+  missedDays, daysSinceWorkout, upcoming, parseVitals, baseline, swapConfig,
 } from '../lib/coach.js'
-import { fmtNum, fmtDate, todayISO, DAYS, DAYN } from '../lib/format.js'
+import { fmtNum, fmtDate, fmtVol, todayISO, isoOf, DAYS, DAYN } from '../lib/format.js'
 import { t, dateLocale } from '../lib/i18n.js'
-import { startFlow, bwSheet, confirmSheet, exerciseDetailSheet } from '../sheets.jsx'
+import { startFlow, bwSheet, confirmSheet, exerciseDetailSheet, swapSheet } from '../sheets.jsx'
+import { weekReview, mondayOf } from '../lib/review.js'
 import Icon from '../components/Icon.jsx'
 import { Button, NumberField, Segmented, TextArea } from '../components/ui.jsx'
 import { glyphOf } from '../lib/glyphs.js'
@@ -120,16 +121,17 @@ function Scale({ value, onChange, lo, hi }) {
   </div>
 }
 
-function CheckIn({ iso }) {
+export function CheckIn({ iso }) {
   const S = useStore(s => s.S)
   const update = useStore(s => s.update)
   const toast = useUI(s => s.toast)
   const saved = coachOf(S).checkins[iso] || {}
   const [v, setV] = useState(saved)
   const [paste, setPaste] = useState(null)
+  const [editing, setEditing] = useState(false)
   useEffect(() => { setV(saved) }, [JSON.stringify(saved)])
   const set = (k, x) => setV(o => { const n = { ...o }; if (x == null || x === 0) delete n[k]; else n[k] = x; return n })
-  const save = () => { saveVitals(update, iso, v); toast(t('Check-in saved')) }
+  const save = () => { saveVitals(update, iso, v); setEditing(false); toast(t('Check-in saved')) }
 
   const importText = txt => {
     const got = parseVitals(txt)
@@ -143,6 +145,27 @@ function CheckIn({ iso }) {
     catch { setPaste('') }   // clipboard blocked → let them paste by hand
   }
   const rhr0 = baseline(S, 'rhr', iso), hrv0 = baseline(S, 'hrv', iso)
+
+  // Once today's check-in is in, it shrinks to one line — it's a morning task, not a screen.
+  if (Object.keys(saved).length && !editing) {
+    const r = readiness(S, iso)
+    const bits = [
+      saved.sleep && t('{0} h sleep', fmtNum(saved.sleep)),
+      saved.rhr && t('RHR {0}', saved.rhr),
+      saved.hrv && t('HRV {0}', saved.hrv),
+      saved.energy && t('energy {0}/5', saved.energy),
+      saved.soreness && t('soreness {0}/5', saved.soreness),
+    ].filter(Boolean)
+    const look = { go: ['var(--acc)', 'checkCircle', t('Good to go')], light: ['var(--yellow)', 'info', t('Lighter day')], rest: ['var(--orange)', 'moon', t('Rest suggested')] }[r ? r.level : 'go']
+    return <div className="card coach-ci" onClick={() => setEditing(true)}>
+      <Icon name={look[1]} style={{ color: look[0], fontSize: 20, flex: 'none' }} />
+      <div className="grow" style={{ minWidth: 0 }}>
+        <div style={{ fontWeight: 600 }}>{t('Checked in')} · <span style={{ color: look[0] }}>{look[2]}</span></div>
+        <div className="small muted">{bits.join(' · ')}</div>
+      </div>
+      <Icon name="pencil" className="chev" />
+    </div>
+  }
 
   return <div className="card">
     <div className="row between" style={{ marginBottom: 8 }}>
@@ -195,7 +218,7 @@ function sessionLine(cfg, sets, unit) {
   return `${sets.length} × ${first.r || cfg.reps}${load}`
 }
 
-function Today() {
+export function Today({ compact }) {
   const S = useStore(s => s.S)
   const nav = useNavigate()
   const iso = todayISO()
@@ -226,6 +249,33 @@ function Today() {
   })
   const entries = adjustEntries(built, adj, S.unit)
   const doneToday = done && S.workouts.some(w => w.d === iso && w.routineId === routine.id)
+  const update = useStore.getState().update
+  // From here the swap is permanent: it rewrites this slot of the routine.
+  const swap = i => swapSheet(routine.ex[i].id, id => update(s => {
+    const rr = s.routines.find(x => x.id === routine.id)
+    if (!rr || !rr.ex[i]) return
+    const sg = rr.ex[i].sg
+    rr.ex[i] = { ...swapConfig(rr.ex[i], id, { bodyweight: lastBW(s)?.w, profile: coachOf(s).profile, unit: s.unit }), ...(sg ? { sg } : {}) }
+  }), false)
+
+  if (compact) return <div className="card" style={{ borderColor: doneToday ? undefined : 'var(--acc)' }}>
+    <div className="row between" style={{ marginBottom: 6 }}>
+      <div style={{ minWidth: 0 }}>
+        <div className="small accent" style={{ fontWeight: 600 }}>{doneToday ? t('Done today') : t('Today’s session')}</div>
+        <div className="big">{routine.name}</div>
+      </div>
+      <span className="lrow-i" style={{ width: 38, height: 38, borderRadius: 9, fontSize: 22 }}><Icon name={glyphOf(routine.emoji)} /></span>
+    </div>
+    {!doneToday && missed > 0 && <div className="small" style={{ color: 'var(--orange)', marginBottom: 6 }}>{t(missed === 1 ? 'You missed 1 training day — no problem, today picks up where you left off.' : 'You missed {0} training days — no problem, today picks up where you left off.', missed)}</div>}
+    {!doneToday && r && r.level !== 'go' && <Verdict r={r} />}
+    <div className="small muted capitalize" style={{ margin: '4px 0 12px' }}>
+      {entries.slice(0, 3).map(e => exOr(e.id).n).join(' · ')}{entries.length > 3 ? ' ' + t('+{0} more', entries.length - 3) : ''}
+    </div>
+    <div className="row" style={{ gap: 8 }}>
+      {!doneToday && <Button variant="primary" icon="play" onClick={() => startFlow(routine.id)}>{r && r.level === 'rest' ? t('Train anyway') : t('Start')}</Button>}
+      <Button onClick={() => nav('/coach')}>{t('Full plan')}</Button>
+    </div>
+  </div>
 
   return <div className="card" style={{ borderColor: doneToday ? undefined : 'var(--acc)' }}>
     <div className="row between" style={{ marginBottom: 4 }}>
@@ -250,10 +300,63 @@ function Today() {
             {why && <div className="small muted">{tr(why)}</div>}
           </div>
           <div className="coach-dose">{sessionLine(e.target, e.sets, S.unit)}</div>
+          {!doneToday && modeOf(e.target) !== 'cardio' && <button className="iconbtn coach-swap" aria-label={t('Swap exercise')} onClick={ev => { ev.stopPropagation(); swap(i) }}><Icon name="shuffle" /></button>}
         </div>
       })}
     </div>
     {!doneToday && <Button variant="primary" icon="play" onClick={() => startFlow(routine.id)}>{r && r.level === 'rest' ? t('Train anyway (lighter)') : t('Start {0}', routine.name)}</Button>}
+  </div>
+}
+
+/* ============================ weekly review ============================ */
+function Ring({ value, max, size = 64 }) {
+  const r = (size - 8) / 2, c = 2 * Math.PI * r
+  const f = max ? Math.min(1, value / max) : 0
+  return <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="coach-ring" aria-hidden="true">
+    <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--surface-3)" strokeWidth="7" />
+    <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={f >= 1 ? 'var(--acc)' : 'var(--orange)'} strokeWidth="7" strokeLinecap="round"
+      strokeDasharray={`${c * f} ${c}`} transform={`rotate(-90 ${size / 2} ${size / 2})`} />
+    <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle" fill="var(--label)" fontSize="16" fontWeight="600">{value}/{max || '–'}</text>
+  </svg>
+}
+
+export function WeekReview() {
+  const S = useStore(s => s.S)
+  const thisMon = mondayOf(todayISO())
+  // Early in the week there is little to show, so Monday–Tuesday open on last week's review.
+  const early = new Date().getDay() === 1 || new Date().getDay() === 2
+  const [which, setWhich] = useState(early && S.workouts.length ? 'last' : 'this')
+  const mon = which === 'this' ? thisMon : (() => { const d = new Date(thisMon + 'T12:00:00'); d.setDate(d.getDate() - 7); return isoOf(d) })()
+  const R = weekReview(S, mon)
+  const parts = Object.entries(R.sets).sort((a, b) => b[1] - a[1])
+
+  return <div className="card">
+    <div className="row between" style={{ marginBottom: 10 }}>
+      <h2 style={{ margin: 0 }}>{t('Weekly review')}</h2>
+      <Segmented className="seg-inline" options={[{ value: 'last', label: t('Last') }, { value: 'this', label: t('This') }]} value={which} onChange={setWhich} />
+    </div>
+    <div className="row" style={{ gap: 14, alignItems: 'center' }}>
+      <Ring value={R.sessions} max={R.planned} />
+      <div className="small muted" style={{ lineHeight: 1.5 }}>
+        <div><b style={{ color: 'var(--label)' }}>{t(R.sessions === 1 ? '{0} session' : '{0} sessions', R.sessions)}</b>{R.planned ? ' ' + t('of {0} planned', R.planned) : ''}</div>
+        {R.sessions > 0 && <div>{[R.minutes ? R.minutes + ' min' : null, R.volume ? fmtVol(R.volume, S.unit) : null].filter(Boolean).join(' · ')}</div>}
+        {R.improved.length > 0 && <div style={{ color: 'var(--acc)' }}>{t(R.improved.length === 1 ? '1 lift got stronger' : '{0} lifts got stronger', R.improved.length)}</div>}
+      </div>
+    </div>
+    {R.improved.length > 0 && <div className="list" style={{ gap: 0, marginTop: 10 }}>
+      {R.improved.slice(0, 4).map(x => <div key={x.id} className="coach-ex" style={{ cursor: 'default', padding: '7px 2px' }}>
+        <Icon name="arrowUp" style={{ color: 'var(--acc)', flex: 'none' }} />
+        <div className="grow capitalize small">{exOr(x.id).n}</div>
+        <div className="small" style={{ fontWeight: 600 }}>{fmtNum(x.from)} → {fmtNum(x.to)} {S.unit}</div>
+      </div>)}
+    </div>}
+    {parts.length > 0 && <div className="chips wrap" style={{ marginTop: 10 }}>
+      {parts.map(([bp, n]) => <span key={bp} className="tag nocap">{t(bp)} · {t('{0} sets', n)}</span>)}
+    </div>}
+    <div className="coach-verdict" style={{ '--tint': 'var(--indigo, var(--acc))', marginTop: 12, marginBottom: 0 }}>
+      <Icon name="lightbulb" style={{ fontSize: 17, flex: 'none' }} />
+      <div className="small">{tr(R.tip)}</div>
+    </div>
   </div>
 }
 
@@ -302,6 +405,7 @@ export default function Coach() {
 
       <CheckIn iso={todayISO()} />
       <Today />
+      <WeekReview />
 
       {next.length > 0 && <>
         <h4 className="sec">{t('Coming up')}</h4>

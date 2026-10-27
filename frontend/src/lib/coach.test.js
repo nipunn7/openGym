@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   SLOTS, GEAR, optionsFor, generatePlan, startWeight, coachRoutineId, missedDays, upcoming,
-  readiness, sessionAdjust, adjustEntries, parseVitals, daysSinceWorkout,
+  readiness, sessionAdjust, adjustEntries, parseVitals, daysSinceWorkout, alternativesFor, swapConfig,
 } from './coach.js'
 import { EXIDX } from './exercises.js'
 import { effectiveRoutineId } from './history.js'
@@ -222,5 +222,29 @@ describe('parseVitals', () => {
   })
   it('turns sleep minutes into hours and drops nonsense', () => {
     expect(parseVitals('sleep=450&rhr=900&foo=3')).toEqual({ sleep: 7.5 })
+  })
+})
+
+describe('swapping an exercise', () => {
+  it('offers the other options for the same movement that the gym has', () => {
+    const alts = alternativesFor('1463', ['legpress', 'hacksquat', 'smith'], 'beginner').map(a => a.id)
+    expect(alts).toEqual(['0743', '0770'])   // hack squat, smith squat
+  })
+  it('falls back to the same muscle for exercises the coach did not pick', () => {
+    const alts = alternativesFor('0031', ['dumbbell'])
+    expect(alts.length).toBeGreaterThan(0)
+    for (const a of alts) expect(EXIDX[a.id].tg).toBe('biceps')
+    expect(alts[0].fits).toBe(true)
+  })
+  it('keeps sets, reps and the rule, and guesses a weight for the new exercise', () => {
+    const cfg = { id: '1463', sets: 3, reps: 10, repsMin: 6, weight: 85, mode: 'reps', prog: 'double', sg: 'x' }
+    const out = swapConfig(cfg, '0743', { bodyweight: 80, profile: PROFILE })
+    expect(out).toMatchObject({ id: '0743', sets: 3, reps: 10, repsMin: 6, prog: 'double' })
+    expect(out.weight).toBeGreaterThan(0)
+    expect(out.sg).toBeUndefined()
+  })
+  it('turns a swap to a bodyweight move into a bodyweight entry', () => {
+    const out = swapConfig({ id: '0025', sets: 3, reps: 10, weight: 40, mode: 'reps' }, '0662', { bodyweight: 80 })
+    expect(out).toMatchObject({ bodyweight: true, weight: 0, repsMax: 20 })
   })
 })

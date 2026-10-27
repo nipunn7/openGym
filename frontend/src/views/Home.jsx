@@ -9,6 +9,7 @@ import LineChart from '../components/LineChart.jsx'
 import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
 import { glyphOf } from '../lib/glyphs.js'
+import { CheckIn, Today, WeekReview } from './Coach.jsx'
 
 // Home = what to do now + a quick glance. Deep charts & history live in Stats.
 export default function Home() {
@@ -16,6 +17,7 @@ export default function Home() {
   const S = useStore(s => s.S)
   const user = useStore(s => s.user)
   const [weekOffset, setWeekOffset] = useState(0)
+  const coachOn = !!(S.coach && S.coach.on)
 
   const today = new Date()
   const routine = effectiveRoutine(S, todayISO())
@@ -51,6 +53,21 @@ export default function Home() {
       <button className="iconbtn" onClick={() => nav('/settings')} aria-label={t('Settings')}><Icon name="gear" /></button>
     </div>
 
+    {coachOn && <>
+      <CheckIn iso={todayISO()} />
+      <Today compact />
+    </>}
+    {!coachOn && !S.routines.length && !S.active && (
+      <div className="card tappable" style={{ cursor: 'pointer' }} onClick={() => nav('/coach')}>
+        <div className="row" style={{ gap: 10 }}>
+          <span className="lrow-i"><Icon name="sparkles" /></span>
+          <div className="grow"><div style={{ fontWeight: 600 }}>{t('Let the coach build your plan')}</div>
+            <div className="small muted">{t('Tell it your gym’s equipment and your days — it tells you what to do each day.')}</div></div>
+          <Icon name="chevronRight" className="chev" />
+        </div>
+      </div>
+    )}
+
     <div className="card">
       <div className="row between" style={{ marginBottom: 8 }}>
         <button className="iconbtn" style={{ width: 30, height: 30, fontSize: 15 }} onClick={() => setWeekOffset(w => w - 1)} aria-label="Previous week"><Icon name="chevronLeft" /></button>
@@ -58,7 +75,7 @@ export default function Home() {
         <button className="iconbtn" style={{ width: 30, height: 30, fontSize: 15 }} onClick={() => setWeekOffset(w => w + 1)} aria-label="Next week"><Icon name="chevronRight" /></button>
       </div>
       <div className="week">{strip}</div>
-      <div className="today-row" onClick={onToday}>
+      {!coachOn && <div className="today-row" onClick={onToday}>
         <div className="row" style={{ gap: 9, minWidth: 0 }}>
           <span className="lrow-i" style={{ background: S.active ? 'var(--orange)' : routine ? 'var(--acc)' : 'var(--surface-3)' }}>
             <Icon name={S.active ? 'timer' : routine ? glyphOf(routine.emoji) : 'moon'} />
@@ -71,8 +88,10 @@ export default function Home() {
         {S.active ? <span className="tag" style={{ color: 'var(--orange)', background: 'color-mix(in srgb,var(--orange) 16%,transparent)' }}>{t('Resume')}</span>
           : routine ? <span className="tag acc">{t('Start')}</span>
           : <Icon name="plus" className="chev" />}
-      </div>
+      </div>}
     </div>
+
+    {coachOn && <WeekReview />}
 
     {!S.routines.length && !S.active && (
       <div className="card">
