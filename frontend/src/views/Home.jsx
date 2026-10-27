@@ -10,6 +10,8 @@ import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
 import { glyphOf } from '../lib/glyphs.js'
 import { CheckIn, Today, WeekReview } from './Coach.jsx'
+import { measureSummary, bodyFatSeries, lenUnit, toShow, daysSince } from '../lib/body.js'
+import { coachOf } from '../lib/coach.js'
 
 // Home = what to do now + a quick glance. Deep charts & history live in Stats.
 export default function Home() {
@@ -57,17 +59,6 @@ export default function Home() {
       <CheckIn iso={todayISO()} />
       <Today compact />
     </>}
-    {!coachOn && !S.routines.length && !S.active && (
-      <div className="card tappable" style={{ cursor: 'pointer' }} onClick={() => nav('/coach')}>
-        <div className="row" style={{ gap: 10 }}>
-          <span className="lrow-i"><Icon name="sparkles" /></span>
-          <div className="grow"><div style={{ fontWeight: 600 }}>{t('Let the coach build your plan')}</div>
-            <div className="small muted">{t('Tell it your gym’s equipment and your days — it tells you what to do each day.')}</div></div>
-          <Icon name="chevronRight" className="chev" />
-        </div>
-      </div>
-    )}
-
     <div className="card">
       <div className="row between" style={{ marginBottom: 8 }}>
         <button className="iconbtn" style={{ width: 30, height: 30, fontSize: 15 }} onClick={() => setWeekOffset(w => w - 1)} aria-label="Previous week"><Icon name="chevronLeft" /></button>
@@ -99,8 +90,9 @@ export default function Home() {
           <span className="lrow-i"><Icon name="sparkles" /></span>
           <div className="big" style={{ fontSize: 22 }}>{t('Welcome!')}</div>
         </div>
-        <div className="muted small" style={{ marginBottom: 12 }}>{t('Set up your weekly routine to get going — or load a ready-made Push / Pull / Legs plan.')}</div>
-        <Button variant="primary" icon="sparkles" onClick={loadStarterPlan}>{t('Load starter plan (PPL)')}</Button>
+        <div className="muted small" style={{ marginBottom: 12 }}>{t('Tell the coach your gym’s equipment and your days — it builds the plan and tells you what to do each day. Or set things up yourself.')}</div>
+        <Button variant="primary" icon="sparkles" onClick={() => nav('/coach')}>{t('Build my plan with the coach')}</Button>
+        <div style={{ height: 8 }} /><Button onClick={loadStarterPlan}>{t('Load starter plan (PPL)')}</Button>
         <div style={{ height: 8 }} /><Button onClick={() => nav('/plan')}>{t('Build my own plan')}</Button>
       </div>
     )}
@@ -134,6 +126,29 @@ export default function Home() {
         <div className="chart" style={{ marginTop: 8 }}><LineChart points={bwPoints} h={130} unit={S.unit} goal={S.targetW} /></div>
       </> : <div className="muted small">{t("No entries yet — log your weight to start the curve. It's also asked before every workout.")}</div>}
     </div>
+
+    {(() => {
+      const waist = measureSummary(S, 'waist')
+      const bf = bodyFatSeries(S, coachOf(S).profile)
+      const lastM = (S.measures || []).length ? S.measures[S.measures.length - 1].d : null
+      const gap = daysSince(lastM, todayISO())
+      const u = lenUnit(S.unit)
+      return <div className="card tappable" style={{ cursor: 'pointer' }} onClick={() => nav('/body')}>
+        <div className="row between">
+          <div style={{ minWidth: 0 }}>
+            <h2 style={{ margin: 0 }}>{t('Body')}</h2>
+            <div className="small muted" style={{ marginTop: 4 }}>
+              {waist || bf.length ? [
+                waist && t('Waist {0}', fmtNum(toShow(waist.v, S.unit)) + ' ' + u) + (waist.sinceFirst ? ` (${waist.sinceFirst > 0 ? '+' : '−'}${fmtNum(Math.abs(toShow(waist.sinceFirst, S.unit)))})` : ''),
+                bf.length && t('~{0}% body fat', fmtNum(bf[bf.length - 1].bf)),
+              ].filter(Boolean).join(' · ') : t('Measurements & progress photos — see changes the scale misses.')}
+            </div>
+            {gap != null && gap >= 28 && <div className="small" style={{ color: 'var(--orange)', marginTop: 2 }}>{t('Monthly check-in due: measure & photo')}</div>}
+          </div>
+          <Icon name="figureStrength" className="chev" style={{ fontSize: 20 }} />
+        </div>
+      </div>
+    })()}
 
     <div className="card tappable" style={{ cursor: 'pointer' }} onClick={() => calendarSheet()}>
       <div className="row between">

@@ -36,6 +36,14 @@ your gym once; after that it tells you what to do each day, and how much.
 8. **Home is the coach screen.** With the coach on, Home shows the check-in, today's session
    and the weekly review first. The check-in shrinks to one line once saved.
 
+9. **Body page** (Home → Body card). Log waist, chest, arm, hips, thigh and neck, each with a
+   chart. Measurements are stored in cm and shown in inches for a pound profile. Body fat is
+   estimated with the US Navy tape method (waist, neck and height, plus hips for women). That
+   method can be a few percent off for any one person; the trend is what matters. Progress
+   photos (front / side / back) can be compared side by side. **Photos stay on the device:**
+   they live in the browser's IndexedDB, resized to 1080 px, and are not synced or included
+   in backups. Reminders appear after 14 days without measuring and 28 days without a photo.
+
 The plans it builds are normal routines. You can open any of them in the **Plan** tab and swap
 an exercise, change sets or reps, or delete one.
 
@@ -97,6 +105,7 @@ install on your phone, so it isn't done here.
   rotation scheduling, readiness rules, vitals parsing (pure functions).
 - `frontend/src/lib/coach.test.js`: tests for all of the above.
 - `frontend/src/lib/review.js` (+ tests): the weekly review.
+- `frontend/src/lib/body.js` (+ tests), `lib/photos.js`, `views/Body.jsx`: measurements, body fat, photos.
 - `frontend/src/views/Coach.jsx`: the Coach tab, plus the cards Home reuses.
 - `history.js` `effectiveRoutineId`: uses the rotation while the coach is on.
 - `sheets.jsx` `beginWorkout`: applies the lighter-day / comeback adjustment.
