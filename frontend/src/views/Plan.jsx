@@ -21,11 +21,22 @@ export default function Plan() {
   return <>
     <div className="hdr">
       <div><h1>{t('Plan')}</h1><div className="sub">{t('Your weekly routine')}</div></div>
-      <button className="iconbtn" onClick={planToolsSheet} aria-label={t('Share your plan')} title={t('Share your plan')}><Icon name="upload" /></button>
+      <div className="row" style={{ gap: 8 }}>
+        <button className="iconbtn" onClick={() => nav('/library')} aria-label={t('Exercises')} title={t('Exercises')}><Icon name="list" /></button>
+        <button className="iconbtn" onClick={planToolsSheet} aria-label={t('Share your plan')} title={t('Share your plan')}><Icon name="upload" /></button>
+      </div>
     </div>
     <div className="cols"><div>
       <h4 className="sec">{t('Week schedule')}</h4>
-      <div className="list" style={{ display: 'flex', flexDirection: 'column' }}>
+      {S.coach && S.coach.on ? <div className="card tappable" style={{ cursor: 'pointer' }} onClick={() => nav('/coach')}>
+        <div className="row" style={{ gap: 10 }}>
+          <span className="lrow-i"><Icon name="sparkles" /></span>
+          <div className="grow"><div style={{ fontWeight: 600 }}>{t('The coach is scheduling')}</div>
+            <div className="small muted">{t('Sessions run in order on your training days; a missed day shifts the queue instead of skipping a session.')}</div>
+            <div className="small" style={{ marginTop: 4 }}>{(S.coach.rotation || []).map(id => (S.routines.find(r => r.id === id) || {}).name).filter(Boolean).join(' → ')}</div></div>
+          <Icon name="chevronRight" className="chev" />
+        </div>
+      </div> : <div className="list" style={{ display: 'flex', flexDirection: 'column' }}>
         {[1, 2, 3, 4, 5, 6, 0].map(d => {
           const r = S.routines.find(x => x.id === S.week[d])
           return <div key={d} className="item" onClick={() => dayAssignSheet(d)}>
@@ -33,7 +44,7 @@ export default function Plan() {
             {r ? <span className="tag acc"><Icon name={glyphOf(r.emoji)} />{r.name}</span> : <span className="tag">{t('Rest')}</span>}
             <Icon name="chevronRight" className="chev" /></div>
         })}
-      </div>
+      </div>}
     </div><div>
       <div className="row between" style={{ marginTop: 22, marginBottom: 10 }}>
         <h4 className="sec" style={{ margin: 0 }}>{t('Routines')}</h4>

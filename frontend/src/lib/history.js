@@ -1,6 +1,7 @@
 // Pure helpers over the state object S (ported 1:1 from the vanilla app).
 import { todayISO, isoOf, weekKey, fmtNum } from './format.js'
 import { isCardio, isBodyweightEq } from './exercises.js'
+import { coachRoutineId } from './coach.js'
 import { t } from './i18n.js'
 
 // How an exercise is logged (issue #16). This used to be derived from the body part alone,
@@ -162,6 +163,8 @@ export function effectiveRoutineId(S, iso) {
   const ov = S.dayPlan[iso]
   if (ov === 'rest') return null
   if (ov && S.routines.some(r => r.id === ov)) return ov
+  // Coach mode schedules by rotation, not by weekday — see coach.js.
+  if (S.coach && S.coach.on) return coachRoutineId(S, iso)
   const wd = new Date(iso + 'T12:00:00').getDay()
   return S.week[wd] || null
 }

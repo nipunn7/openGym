@@ -56,6 +56,7 @@ as a home-screen app, passkey sign-in, offline support, sync across your phone a
 
 ## Features
 
+- 🧠 **Coach mode** — tell it your gym's equipment, your days and your goal; it builds the plan, tells you what to do each day (exercise, sets, reps, weight), runs sessions as a queue so a missed day is picked up the next day, and adjusts after a morning check-in (sleep, resting HR, HRV — from Apple Watch via an iOS Shortcut). See **[docs/COACH.md](docs/COACH.md)**
 - ⚖️ **Body-weight tracking** — interactive chart with a goal line you set, gains/losses colored by whether they move toward it
 - 🏋️ **Weekly plan** — a routine per weekday, over a library of **1,324 exercises** (searchable, with animated demos)
 - 🗓️ **Reschedule any day** — sick, missed a session, or fewer gym days this week? Move a workout to another day without touching your weekly plan
