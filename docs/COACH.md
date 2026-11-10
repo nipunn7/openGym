@@ -1,5 +1,25 @@
 # Coach mode
 
+## The trainer, in short (current design)
+
+- **Three tabs.** **Today** tells you one thing: today's workout (machines, sets, reps,
+  weights), a walk, or rest. **Plan** shows your next 7 days, your sessions and your rest-day
+  walks; tap a day or an exercise to change it. **Progress** shows the week, strength gains,
+  body weight and body measurements.
+- **Setup is a short conversation:** goal, experience, days, time, your gym's equipment
+  (pre-ticked with what a typical society gym has), rest-day walks, and optional details about you.
+- **"Not feeling the gym today?"** Pick a walk (45/60/90 min for fat loss and general fitness,
+  30/45/60 otherwise), a 20-minute home bodyweight session, a 15-minute mobility session, or
+  rest. The gym session isn't lost: it moves to your next training day.
+- **Apple Health (iPhone app):** connect once from Today. Sleep, resting heart rate and HRV
+  fill the morning check-in by themselves, a walk your Watch records ticks off a planned walk
+  once it reaches 80% of the planned length, and today's weight from a smart scale is logged.
+  Values you typed yourself are never overwritten. Native code:
+  `frontend/ios/App/App/TrainerHealthPlugin.swift`; logic: `applyHealth` in `lib/trainer.js`.
+- **Look:** follows the phone's light/dark setting (Settings → Theme → Auto).
+
+The sections below describe the engine underneath, which is unchanged.
+
 The **Coach** tab turns openGym into a day-by-day coach. You tell it about yourself and
 your gym once; after that it tells you what to do each day, and how much.
 

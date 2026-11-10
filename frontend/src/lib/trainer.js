@@ -108,7 +108,8 @@ export function todayPlan(S, iso = todayISO()) {
     const builtinDone = ws.some(w => w.routineId === (openAlt.kind === 'home' ? HOME_ID : MOBILITY_ID))
     if (!builtinDone) return { kind: 'alt', activity: openAlt }
   }
-  if (ws.length || acts.some(a => a.done)) return { kind: 'done', workouts: ws, activities: acts.filter(a => a.done || a.kind === 'rest') }
+  // An extra walk (recorded by the Watch on a gym day) doesn't stand in for the day's plan.
+  if (ws.length || acts.some(a => a.done && !a.extra)) return { kind: 'done', workouts: ws, activities: acts.filter(a => a.done || a.kind === 'rest') }
   if (!C.on || !C.rotation.length) return { kind: 'setup' }
 
   const ov = (S.dayPlan || {})[iso]
@@ -127,4 +128,62 @@ export function todayPlan(S, iso = todayISO()) {
 export function greeting(now = new Date()) {
   const h = now.getHours()
   return h < 5 ? 'Up late' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
+}
+
+/* ---------------------------------------------------------- Apple Health -- */
+
+/**
+ * Fold what Apple Health knows about `iso` into S (call inside update()).
+ * `h` is the native plugin's readDay(): { sleepHours, rhr, hrv, weightKg, steps, walkMinutes }.
+ *   · sleep / resting HR / HRV fill today's check-in — never over a value you typed yourself
+ *   · a body weight recorded today is logged once, unless you already weighed in today
+ *   · a recorded walk ticks off a planned walk once it reaches 80 % of the planned length;
+ *     on any other day it is logged as an extra walk that counts in the weekly review but
+ *     doesn't mark the day's workout as done
+ * Returns a short list of what changed, for a toast.
+ */
+export function applyHealth(S, h, { unit = 'kg' } = {}, iso = todayISO()) {
+  if (!h) return []
+  const changed = []
+  const C = coachOf(S)
+  const r1 = x => Math.round(x * 10) / 10
+  const check = { ...(C.checkins[iso] || {}) }
+  const auto = new Set(check.auto || [])
+  const fill = (k, v) => {
+    if (!(v > 0)) return
+    if (check[k] != null && !auto.has(k)) return          // typed by hand — leave it
+    if (check[k] !== v) changed.push(k)
+    check[k] = v; auto.add(k)
+  }
+  fill('sleep', h.sleepHours > 0 ? r1(h.sleepHours) : null)
+  fill('rhr', h.rhr > 0 ? Math.round(h.rhr) : null)
+  fill('hrv', h.hrv > 0 ? Math.round(h.hrv) : null)
+  if (h.steps > 0) check.steps = Math.round(h.steps)
+  if (auto.size) check.auto = [...auto]
+
+  if (h.weightKg > 0 && !(S.bodyweight || []).some(b => b.d === iso)) {
+    const w = r1(unit === 'lb' ? h.weightKg * 2.20462 : h.weightKg)
+    S.bodyweight = [...(S.bodyweight || []), { d: iso, w, t: Date.now() }].sort((a, b) => (a.d < b.d ? -1 : 1))
+    changed.push('weight')
+  }
+
+  const walked = Math.round(h.walkMinutes || 0)
+  if (walked >= 5) {
+    S.activities = S.activities || []
+    const plan = todayPlan(S, iso)
+    const planned = plan.kind === 'walk' ? plan.min : plan.kind === 'alt' && plan.activity.kind === 'walk' ? plan.activity.min : null
+    const logged = S.activities.find(a => a.d === iso && a.kind === 'walk' && a.done && a.src === 'health')
+    if (logged) {
+      if (walked > (logged.min || 0)) { logged.min = walked; changed.push('walk') }
+    } else if (planned != null) {
+      if (walked >= planned * 0.8) { completeActivity(S, { kind: 'walk', min: walked, src: 'health' }, iso); changed.push('walk') }
+      else check.walkMin = walked
+    } else if (walked >= 10) {
+      S.activities.push({ d: iso, kind: 'walk', min: walked, done: true, src: 'health', extra: true })
+      changed.push('walk')
+    }
+  }
+  // Written last: the walk step above can add progress (walkMin) to today's check-in.
+  if (Object.keys(check).length) S.coach = { ...coachOf(S), checkins: { ...coachOf(S).checkins, [iso]: check } }
+  return changed
 }

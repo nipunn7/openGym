@@ -110,3 +110,45 @@ describe('choosing a walk instead', () => {
     expect(walkOptions({ goal: 'strength' })).toEqual([30, 45, 60])
   })
 })
+
+import { applyHealth } from './trainer.js'
+describe('Apple Health', () => {
+  it('fills the check-in but never overwrites what you typed', () => {
+    const S = state()
+    S.coach.checkins[MON] = { sleep: 6 }
+    const ch = applyHealth(S, { sleepHours: 7.43, rhr: 54.6, hrv: 61.2, steps: 4321.7 }, {}, MON)
+    expect(S.coach.checkins[MON]).toMatchObject({ sleep: 6, rhr: 55, hrv: 61, steps: 4322, auto: ['rhr', 'hrv'] })
+    expect(ch).toEqual(['rhr', 'hrv'])
+    applyHealth(S, { rhr: 52 }, {}, MON)
+    expect(S.coach.checkins[MON].rhr).toBe(52)                 // still Health's, so refreshed
+  })
+  it('logs today’s weight once, in the profile unit', () => {
+    const S = state({ unit: 'lb' })
+    applyHealth(S, { weightKg: 80 }, { unit: 'lb' }, MON)
+    applyHealth(S, { weightKg: 79 }, { unit: 'lb' }, MON)
+    expect(S.bodyweight).toEqual([expect.objectContaining({ d: MON, w: 176.4 })])
+  })
+  it('ticks off a planned walk at 80 % of its length', () => {
+    const S = state()
+    applyHealth(S, { walkMinutes: 40 }, {}, SUN)               // 60-min walk day
+    expect(todayPlan(S, SUN).kind).toBe('walk')
+    expect(S.coach.checkins[SUN].walkMin).toBe(40)
+    applyHealth(S, { walkMinutes: 49 }, {}, SUN)
+    expect(todayPlan(S, SUN).kind).toBe('done')
+    applyHealth(S, { walkMinutes: 65 }, {}, SUN)
+    expect(S.activities).toEqual([{ d: SUN, kind: 'walk', min: 65, done: true, src: 'health' }])
+  })
+  it('a walk on a gym day counts, but the workout is still waiting', () => {
+    const S = state()
+    applyHealth(S, { walkMinutes: 25 }, {}, MON)
+    expect(todayPlan(S, MON).kind).toBe('gym')
+    expect(weekReview(S, MON, SUN)).toMatchObject({ walks: 1, walkMin: 25 })
+  })
+  it('completes a walk chosen instead of the gym', () => {
+    const S = state()
+    chooseAlternative(S, 'walk', 60, MON)
+    applyHealth(S, { walkMinutes: 58 }, {}, MON)
+    expect(todayPlan(S, MON).kind).toBe('done')
+    expect(coachRoutineId(S, TUE, MON)).toBe(S.coach.rotation[0])
+  })
+})

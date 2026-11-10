@@ -13,6 +13,7 @@ import { fmtDate, todayISO, DAYN } from '../lib/format.js'
 import { t, dateLocale } from '../lib/i18n.js'
 import { startFlow, swapSheet, exerciseDetailSheet } from '../sheets.jsx'
 import { CheckIn, Verdict, sessionLine } from './Coach.jsx'
+import { healthPossible, connectHealth } from '../lib/health.js'
 import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
 
@@ -86,6 +87,8 @@ function Hero({ plan, iso }) {
   const S = useStore(s => s.S)
   const nav = useNavigate()
   const [open, setOpen] = useState(false)
+  const walked = (coachOf(S).checkins[iso] || {}).walkMin
+  const walkProgress = walked > 0 && <div className="t-note" style={{ color: 'var(--acc)' }}>{t('{0} min walked so far (Apple Health)', walked)}</div>
 
   if (plan.kind === 'setup') return <div className="t-hero">
     <div className="t-eyebrow">{t('Let’s get started')}</div>
@@ -119,6 +122,7 @@ function Hero({ plan, iso }) {
     return <div className="t-hero">
       <div className="t-eyebrow">{t('Today’s plan')}</div>
       <div className="t-title">{a.kind === 'walk' ? t('Walk {0} minutes', a.min) : t(ALT[a.kind].title)}</div>
+      {a.kind === 'walk' && walkProgress}
       <p className="t-body">{t(ALT[a.kind].sub)}</p>
       {a.kind === 'walk' ? <Button variant="primary" icon="check" onClick={() => walkDoneSheet(a.min)}>{t('I’ve done it')}</Button>
         : <Button variant="primary" icon="play" onClick={() => startFlow(a.kind === 'home' ? HOME_ID : MOBILITY_ID)}>{t('Start')}</Button>}
@@ -129,6 +133,7 @@ function Hero({ plan, iso }) {
   if (plan.kind === 'walk' || plan.kind === 'rest') return <div className="t-hero">
     <div className="t-eyebrow">{t('Rest day')}</div>
     <div className="t-title">{plan.kind === 'walk' ? t('Walk {0} minutes', plan.min) : t('Recover today')}</div>
+    {plan.kind === 'walk' && walkProgress}
     <p className="t-body">{plan.kind === 'walk' ? t('An easy, steady walk keeps you moving and helps you recover. Brisk enough to breathe a little harder.') : t('No training planned. A short walk or some stretching is plenty — or just rest.')}</p>
     {plan.kind === 'walk' ? <Button variant="primary" icon="check" onClick={() => walkDoneSheet(plan.min)}>{t('I’ve done it')}</Button>
       : <Button icon="figureRun" onClick={() => walkDoneSheet(30)}>{t('I went for a walk')}</Button>}
@@ -203,6 +208,11 @@ export default function TodayView() {
       <button className="iconbtn" onClick={() => nav('/settings')} aria-label={t('Settings')}><Icon name="gear" /></button>
     </div>
 
+    {C.on && healthPossible() && !C.health && <button className="t-ci" onClick={() => connectHealth().catch(e => ui().toast(e.message))}>
+      <span className="t-alt-i" style={{ color: 'var(--pink)', background: 'color-mix(in srgb,var(--pink) 14%,transparent)' }}><Icon name="heart" /></span>
+      <div className="grow"><div className="tt">{t('Connect Apple Health')}</div><div className="ss">{t('Fills in sleep and heart rate, and ticks off walks your Watch records')}</div></div>
+      <Icon name="chevronRight" className="chev" />
+    </button>}
     {C.on && plan.kind !== 'active' && <CheckIn iso={iso} collapsible />}
     <Hero plan={plan} iso={iso} />
     {canAlt && plan.kind === 'gym' && !plan.suggestWalk && <button className="t-alt-btn" onClick={() => altSheet(iso)}>

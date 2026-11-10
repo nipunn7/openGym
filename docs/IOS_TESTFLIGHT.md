@@ -11,7 +11,10 @@ You do the steps below **once**. Apple only lets the account owner do them.
 1. developer.apple.com/account → **Certificates, IDs & Profiles** → **Identifiers** → **+**
 2. **App IDs** → **App** → Continue
 3. Description: `openGym` · Bundle ID: **Explicit** → `com.nipungupta.opengym`
-4. Continue → Register. You don't need to tick any capabilities.
+4. Under **Capabilities**, tick **HealthKit**. The app reads sleep, heart rate, HRV, weight,
+   steps and walks from Apple Health. The build may also switch this on by itself, but
+   ticking it avoids a failed first build.
+5. Continue → Register.
 
 While you're there, note your **Team ID**: it's under **Membership details** (10 characters,
 e.g. `AB12CD34EF`).
@@ -69,8 +72,9 @@ New builds show up in TestFlight and can update automatically.
 - **Data stays on the phone.** The iPhone app has no account and no sync: everything
   (including progress photos) is stored inside the app. Use Settings → Export for backups.
   Deleting the app deletes the data; updating it through TestFlight keeps it.
-- **Apple Health:** in your Shortcut, use **Copy to Clipboard**, then tap **From Health** in the
-  app's check-in. See `docs/COACH.md`.
+- **Apple Health:** on first open, tap **Connect Apple Health** on Today and allow the data types.
+  From then on, sleep, resting heart rate and HRV fill the morning check-in by themselves, and
+  walks your Watch records tick off walk days. The app only reads; it never writes to Health.
 - **Cost:** if the repo is private, GitHub counts Mac build minutes at 10× against your free
   allowance (about 200 Mac minutes per month on the free plan). Each build takes roughly
   10–20 minutes. Making the repo public makes them free.

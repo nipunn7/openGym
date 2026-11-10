@@ -7,6 +7,7 @@ import { ACCENTS } from './lib/format.js'
 import { setLang, useLang } from './lib/i18n.js'
 import { setNav } from './lib/nav.js'
 import { useWakeLock } from './lib/wakelock.js'
+import { syncHealth } from './lib/health.js'
 import Icon from './components/Icon.jsx'
 import TabBar from './components/TabBar.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
@@ -63,6 +64,15 @@ function Shell() {
   useEffect(() => { window.scrollTo(0, 0) }, [loc.pathname])
   // bound to the workout, not to the route — checking Stats mid-session keeps the screen on
   useWakeLock(!!S.active && S.keepAwake !== false)
+  // Apple Health (iPhone app only): read today's sleep, heart and walks on launch and whenever
+  // the app comes back to the foreground — so the check-in is already filled in.
+  useEffect(() => {
+    if (!ready) return
+    syncHealth()
+    const on = () => { if (document.visibilityState === 'visible') syncHealth() }
+    document.addEventListener('visibilitychange', on)
+    return () => document.removeEventListener('visibilitychange', on)
+  }, [ready])
 
   const authed = user || isGuest
   if (!ready && !authed) return (

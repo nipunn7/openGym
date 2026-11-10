@@ -13,6 +13,7 @@ import { fmtNum, fmtDate, fmtVol, todayISO, isoOf, DAYS, DAYN } from '../lib/for
 import { t, dateLocale } from '../lib/i18n.js'
 import { startFlow, bwSheet, confirmSheet, exerciseDetailSheet, swapSheet } from '../sheets.jsx'
 import { weekReview, mondayOf } from '../lib/review.js'
+import { healthPossible, syncHealth } from '../lib/health.js'
 import Icon from '../components/Icon.jsx'
 import { Button, NumberField, Segmented, TextArea } from '../components/ui.jsx'
 import { glyphOf } from '../lib/glyphs.js'
@@ -26,7 +27,12 @@ export function saveVitals(update, iso, v) {
   update(s => {
     const c = coachOf(s)
     const { weight, ...rest } = v
-    if (Object.keys(rest).length) c.checkins = { ...c.checkins, [iso]: { ...(c.checkins[iso] || {}), ...rest } }
+    if (Object.keys(rest).length) {
+      const prev = c.checkins[iso] || {}
+      // A value set here is yours: Health sync stops refreshing it (see applyHealth).
+      const auto = (prev.auto || []).filter(k => !(k in rest))
+      c.checkins = { ...c.checkins, [iso]: { ...prev, ...rest, ...(prev.auto ? { auto } : {}) } }
+    }
     const keep = Object.keys(c.checkins).sort().slice(-120)
     c.checkins = Object.fromEntries(keep.map(d => [d, c.checkins[d]]))
     s.coach = c
@@ -142,13 +148,14 @@ export function CheckIn({ iso, collapsible }) {
     toast(t('Imported: {0}', Object.keys(got).join(', ')))
   }
   const fromClipboard = async () => {
+    if (healthPossible() && coachOf(S).health) { await syncHealth({ quiet: false }); return }
     try { importText(await navigator.clipboard.readText()) }
     catch { setPaste('') }   // clipboard blocked → let them paste by hand
   }
   const rhr0 = baseline(S, 'rhr', iso), hrv0 = baseline(S, 'hrv', iso)
 
   // Once today's check-in is in, it shrinks to one line — it's a morning task, not a screen.
-  if (Object.keys(saved).length && !editing) {
+  if (['sleep', 'rhr', 'hrv', 'energy', 'soreness'].some(k => saved[k] != null) && !editing) {
     const r = readiness(S, iso)
     const bits = [
       saved.sleep && t('{0} h sleep', fmtNum(saved.sleep)),
