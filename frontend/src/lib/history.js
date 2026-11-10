@@ -161,7 +161,7 @@ export function bestWeightFor(S, exId) {
 }
 export function effectiveRoutineId(S, iso) {
   const ov = S.dayPlan[iso]
-  if (ov === 'rest') return null
+  if (ov === 'rest' || ov === 'alt') return null   // 'alt': a walk/home/rest chosen instead (trainer.js)
   if (ov && S.routines.some(r => r.id === ov)) return ov
   // Coach mode schedules by rotation, not by weekday — see coach.js.
   if (S.coach && S.coach.on) return coachRoutineId(S, iso)

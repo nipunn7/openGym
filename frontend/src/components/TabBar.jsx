@@ -1,43 +1,32 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
-import { effectiveRoutine } from '../lib/history.js'
-import { todayISO } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 import Icon from './Icon.jsx'
 
-export default function TabBar({ onStart }) {
+// Three places, nothing else: what to do today, the plan, and how it's going. Everything
+// deeper (library, history, stats, settings) is reached from inside those.
+const TABS = [
+  { k: 'today', icon: 'house', label: 'Today', also: ['workout', 'settings'] },
+  { k: 'plan', icon: 'calendar', label: 'Plan', also: ['routines', 'library'] },
+  { k: 'progress', icon: 'chart', label: 'Progress', also: ['stats', 'history', 'body'] },
+]
+
+export default function TabBar() {
   const nav = useNavigate()
   const loc = useLocation()
-  const S = useStore(s => s.S)
+  const active = useStore(s => !!s.S.active)
   const user = useStore(s => s.user)
   const isGuest = useStore(s => s.isGuest())
   if (!user && !isGuest) return null
-  const cur = loc.pathname.split('/')[1] || 'home'
-  const on = k => cur === k || (cur === 'history' && k === 'stats') || (cur === 'settings' && k === 'home') || (cur === 'library' && k === 'plan')
-
-  const startWorkout = () => {
-    if (!S.active) {
-      const r = effectiveRoutine(S, todayISO())
-      if (r && r.ex.length) { onStart(r.id); return }
-    }
-    nav('/workout')
-  }
-  const Tab = ({ k, icon, to, label }) => (
-    <button className={on(k) ? 'on' : ''} onClick={() => nav(to)}>
-      <Icon name={icon} /><span>{label}</span>
-    </button>
-  )
-
+  const cur = loc.pathname.split('/')[1] || 'today'
   return (
-    <nav id="tabbar">
-      <Tab k="home" icon="house" to="/home" label={t('Home')} />
-      <Tab k="plan" icon="calendar" to="/plan" label={t('Plan')} />
-      <button className={'start' + (S.active ? ' rec' : '')} onClick={startWorkout}>
-        <span className="cir"><Icon name={S.active ? 'play' : 'dumbbell'} /></span>
-        <span>{S.active ? t('Resume') : t('Start')}</span>
-      </button>
-      <Tab k="stats" icon="chart" to="/stats" label={t('Stats')} />
-      <Tab k="coach" icon="sparkles" to="/coach" label={t('Coach')} />
+    <nav id="tabbar" className="t-tabs">
+      {TABS.map(x => {
+        const on = cur === x.k || x.also.includes(cur)
+        return <button key={x.k} className={on ? 'on' : ''} onClick={() => nav(x.k === 'today' && active ? '/workout' : '/' + x.k)}>
+          <Icon name={x.k === 'today' && active ? 'timer' : x.icon} /><span>{t(x.label)}</span>
+        </button>
+      })}
     </nav>
   )
 }

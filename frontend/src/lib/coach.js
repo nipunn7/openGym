@@ -138,6 +138,7 @@ export const DEFAULT_COACH = {
   gear: [],
   rotation: [],
   checkins: {},
+  walkDays: {},     // weekday → walk minutes on rest days
 }
 // A coach block from any source (old backup, a half-filled setup) with every field present.
 export function coachOf(S) {
@@ -149,6 +150,7 @@ export function coachOf(S) {
     gear: Array.isArray(c.gear) ? c.gear : [],
     rotation: Array.isArray(c.rotation) ? c.rotation : [],
     checkins: c.checkins || {},
+    walkDays: c.walkDays || {},
   }
 }
 
@@ -343,7 +345,8 @@ export function missedDays(S, today = todayISO()) {
   const trained = new Set((S.workouts || []).map(w => w.d))
   let n = 0
   for (let d = addDays(last.d, 1), guard = 0; d < today && guard < 800; d = addDays(d, 1), guard++) {
-    if (isTrainingDay(C, d) && !trained.has(d) && (S.dayPlan || {})[d] !== 'rest') n++
+    const ov = (S.dayPlan || {})[d]
+    if (isTrainingDay(C, d) && !trained.has(d) && ov !== 'rest' && ov !== 'alt') n++
   }
   return n
 }
@@ -362,7 +365,7 @@ export function upcoming(S, n = 6, today = todayISO()) {
   const dayPlan = S.dayPlan || {}
   for (let d = today, guard = 0; out.length < n && guard < 60; d = addDays(d, 1), guard++) {
     const ov = dayPlan[d]
-    const id = ov === 'rest' ? null : (ov && (S.routines || []).some(r => r.id === ov)) ? ov : coachRoutineId(S, d, today)
+    const id = ov === 'rest' || ov === 'alt' ? null : (ov && (S.routines || []).some(r => r.id === ov)) ? ov : coachRoutineId(S, d, today)
     if (id) out.push({ d, id })
   }
   return out

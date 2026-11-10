@@ -22,7 +22,7 @@ export function plannedFor(S, monday) {
     const d = addDays(monday, i)
     const wd = new Date(d + 'T12:00:00').getDay()
     const ov = dayPlan[d]
-    if (ov === 'rest') continue
+    if (ov === 'rest' || ov === 'alt') continue
     if (ov) { n++; continue }
     if (C.on ? C.days.includes(wd) : !!(S.week || {})[wd]) n++
   }
@@ -61,6 +61,9 @@ export function weekReview(S, monday, today = todayISO()) {
   })
   improved.sort((a, b) => (b.to - b.from) / b.from - (a.to - a.from) / a.from)
 
+  const acts = (S.activities || []).filter(a => a.d >= monday && a.d <= to && a.done && a.kind !== 'rest')
+  const walks = acts.filter(a => a.kind === 'walk')
+  const walkMin = walks.reduce((n, a) => n + (a.min || 0), 0)
   const planned = plannedFor(S, monday)
   const sessions = ws.length
   const over = today > to
@@ -75,5 +78,5 @@ export function weekReview(S, monday, today = todayISO()) {
   else if (!over && planned && sessions < planned) tip = ['{0} of {1} done — {2} to go this week.', sessions, planned, planned - sessions]
   else tip = ['Every planned session done. Sleep and protein do the rest.']
 
-  return { from: monday, to, sessions, planned, minutes, volume, improved, firsts, sets, missing, tip, over }
+  return { from: monday, to, sessions, planned, minutes, volume, improved, firsts, sets, missing, tip, over, walks: walks.length, walkMin }
 }

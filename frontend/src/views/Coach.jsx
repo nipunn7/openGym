@@ -22,7 +22,7 @@ const tr = arr => t(arr[0], ...arr.slice(1))
 
 // Saves vitals for a day: the check-in fields go to coach.checkins, a weight goes to the
 // body-weight log exactly like a manual weigh-in. Keeps ~4 months of check-ins.
-function saveVitals(update, iso, v) {
+export function saveVitals(update, iso, v) {
   update(s => {
     const c = coachOf(s)
     const { weight, ...rest } = v
@@ -121,7 +121,7 @@ function Scale({ value, onChange, lo, hi }) {
   </div>
 }
 
-export function CheckIn({ iso }) {
+export function CheckIn({ iso, collapsible }) {
   const S = useStore(s => s.S)
   const update = useStore(s => s.update)
   const toast = useUI(s => s.toast)
@@ -129,9 +129,10 @@ export function CheckIn({ iso }) {
   const [v, setV] = useState(saved)
   const [paste, setPaste] = useState(null)
   const [editing, setEditing] = useState(false)
+  const [openForm, setOpenForm] = useState(false)
   useEffect(() => { setV(saved) }, [JSON.stringify(saved)])
   const set = (k, x) => setV(o => { const n = { ...o }; if (x == null || x === 0) delete n[k]; else n[k] = x; return n })
-  const save = () => { saveVitals(update, iso, v); setEditing(false); toast(t('Check-in saved')) }
+  const save = () => { saveVitals(update, iso, v); setEditing(false); setOpenForm(false); toast(t('Check-in saved')) }
 
   const importText = txt => {
     const got = parseVitals(txt)
@@ -157,7 +158,7 @@ export function CheckIn({ iso }) {
       saved.soreness && t('soreness {0}/5', saved.soreness),
     ].filter(Boolean)
     const look = { go: ['var(--acc)', 'checkCircle', t('Good to go')], light: ['var(--yellow)', 'info', t('Lighter day')], rest: ['var(--orange)', 'moon', t('Rest suggested')] }[r ? r.level : 'go']
-    return <div className="card coach-ci" onClick={() => setEditing(true)}>
+    return <div className={collapsible ? 't-ci' : 'card coach-ci'} onClick={() => setEditing(true)}>
       <Icon name={look[1]} style={{ color: look[0], fontSize: 20, flex: 'none' }} />
       <div className="grow" style={{ minWidth: 0 }}>
         <div style={{ fontWeight: 600 }}>{t('Checked in')} · <span style={{ color: look[0] }}>{look[2]}</span></div>
@@ -167,7 +168,14 @@ export function CheckIn({ iso }) {
     </div>
   }
 
-  return <div className="card">
+  // On Today it starts as a single line: the workout is the point of the screen, not a form.
+  if (collapsible && !openForm && !editing) return <button className="t-ci" onClick={() => setOpenForm(true)}>
+    <span className="t-alt-i"><Icon name="sun" /></span>
+    <div className="grow"><div className="tt">{t('Morning check-in')}</div><div className="ss">{t('Sleep, energy, soreness · 20 seconds')}</div></div>
+    <Icon name="chevronRight" className="chev" />
+  </button>
+
+  return <div className={collapsible ? 't-hero t-ci-form' : 'card'}>
     <div className="row between" style={{ marginBottom: 8 }}>
       <h2 style={{ margin: 0 }}>{t('Morning check-in')}</h2>
       <Button size="sm" icon="heart" onClick={fromClipboard}>{t('From Health')}</Button>
@@ -195,7 +203,7 @@ export function CheckIn({ iso }) {
 }
 
 /* ============================ today ============================ */
-function Verdict({ r }) {
+export function Verdict({ r }) {
   if (!r) return null
   const look = {
     go: ['var(--acc)', 'checkCircle', t('Good to go — train as planned.')],
@@ -209,7 +217,7 @@ function Verdict({ r }) {
   </div>
 }
 
-function sessionLine(cfg, sets, unit) {
+export function sessionLine(cfg, sets, unit) {
   const mode = modeOf(cfg)
   const first = sets[0] || {}
   if (mode === 'cardio') return `${first.min || cfg.min || 20} min`
@@ -340,6 +348,7 @@ export function WeekReview() {
       <div className="small muted" style={{ lineHeight: 1.5 }}>
         <div><b style={{ color: 'var(--label)' }}>{t(R.sessions === 1 ? '{0} session' : '{0} sessions', R.sessions)}</b>{R.planned ? ' ' + t('of {0} planned', R.planned) : ''}</div>
         {R.sessions > 0 && <div>{[R.minutes ? R.minutes + ' min' : null, R.volume ? fmtVol(R.volume, S.unit) : null].filter(Boolean).join(' · ')}</div>}
+        {R.walks > 0 && <div>{t(R.walks === 1 ? '1 walk · {0} min' : '{1} walks · {0} min', R.walkMin, R.walks)}</div>}
         {R.improved.length > 0 && <div style={{ color: 'var(--acc)' }}>{t(R.improved.length === 1 ? '1 lift got stronger' : '{0} lifts got stronger', R.improved.length)}</div>}
       </div>
     </div>

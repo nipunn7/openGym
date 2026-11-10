@@ -950,3 +950,124 @@ h4.sec{
 .body-compare figcaption{font-size:12px;color:var(--label-2);text-align:center;margin-top:3px}
 .body-full{width:100%;border-radius:12px;display:block}
 .coach-ex>.grow,.body-in>.grow{flex:1}
+
+/* =========================================================== trainer UI ==
+   The redesign: three screens, one instruction at a time. Calm surfaces, big
+   type, generous space, one accent. Works in light and dark (follows the phone).
+   ======================================================================== */
+.t-page{padding-bottom:24px}
+.t-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:10px 2px 20px}
+.t-head h1{font-size:32px;line-height:1.1;font-weight:700;letter-spacing:-.03em}
+.t-date{color:var(--label-2);font-size:14px;margin-bottom:3px}
+.t-head h1+.t-date{margin:4px 0 0}
+
+.t-hero{background:var(--surface);border-radius:22px;padding:22px 20px 20px;margin-bottom:12px}
+.t-eyebrow{font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--acc);margin-bottom:6px}
+.t-title{font-size:30px;font-weight:700;letter-spacing:-.03em;line-height:1.1;margin-bottom:6px}
+.t-meta{color:var(--label-2);font-size:15px;margin-bottom:12px}
+.t-body{color:var(--label-2);font-size:15px;line-height:1.45;margin:4px 0 18px}
+.t-note{font-size:14px;color:var(--orange);margin:-4px 0 10px}
+.t-next{margin-top:-6px;font-size:15px;color:var(--label-2)}
+.t-next b{color:var(--label);font-weight:600}
+.t-done-i{font-size:40px;color:var(--acc);margin-bottom:6px;display:flex}
+.t-link{display:block;margin:14px auto 0;color:var(--acc);font-size:15px;font-weight:500}
+
+.t-list{margin:6px 0 18px}
+.t-ex{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:var(--hair) solid var(--sep);cursor:pointer}
+.t-ex:last-of-type{border-bottom:0}
+.t-ex>.grow{flex:1;min-width:0}
+.t-ex-n{font-size:16px;font-weight:500;text-transform:capitalize;line-height:1.25}
+.t-ex-m{font-size:13px;color:var(--label-3);text-transform:capitalize;margin-top:2px}
+.t-ex-d{font-size:15px;font-weight:600;white-space:nowrap;text-align:right}
+.t-gain{font-size:13px;font-weight:600;min-width:40px;text-align:right}
+.t-swap{width:32px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;
+  color:var(--label-3);background:var(--surface-2);font-size:14px;flex:none}
+.t-more{font-size:14px;color:var(--acc);padding:10px 0 0;font-weight:500}
+
+.t-alt-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:16px;
+  border-radius:16px;background:var(--surface);color:var(--label);font-size:16px;font-weight:500;margin-bottom:12px}
+.t-alt-btn .icn{color:var(--acc);font-size:19px}
+.t-alt{display:flex;flex-direction:column;gap:8px}
+.t-alt-row{display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;background:var(--surface-2);cursor:pointer}
+.t-alt-row>.grow{flex:1;min-width:0}
+.t-alt-row .tt,.t-sess .tt,.t-day .tt{font-size:16px;font-weight:500}
+.t-alt-row .ss,.t-sess .ss,.t-day .ss{font-size:13px;color:var(--label-2);margin-top:2px}
+.t-alt-i{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none;
+  background:var(--acc-soft);color:var(--acc);font-size:19px}
+.t-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.t-chips .chip{background:var(--surface-3);padding:6px 12px}
+.t-chips .chip.on{background:var(--acc);color:var(--on-acc)}
+
+.t-week{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 0 4px}
+.t-dots{display:flex;gap:6px}
+.t-dots i{width:22px;height:6px;border-radius:3px;background:var(--surface-3)}
+.t-dots i.on{background:var(--acc)}
+
+.t-sec{font-size:13px;font-weight:600;color:var(--label-2);text-transform:uppercase;letter-spacing:.04em;margin:22px 4px 8px}
+.t-card{display:block;width:100%;text-align:left;background:var(--surface);border-radius:18px;padding:6px 16px;margin-bottom:10px}
+.t-card.t-sess{padding:14px 16px}
+.t-foot{font-size:13px;color:var(--label-3);margin:0 4px 4px;line-height:1.4}
+.t-sess{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 0}
+.t-sess>.grow,.t-day>.grow{flex:1;min-width:0}
+.t-card>.t-sess+.t-sess{border-top:var(--hair) solid var(--sep)}
+.t-days{padding:4px 12px}
+.t-day{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 0;border-bottom:var(--hair) solid var(--sep)}
+.t-day:last-child{border-bottom:0}
+.t-day-d{width:40px;flex:none;display:flex;flex-direction:column;align-items:center;line-height:1.1}
+.t-day-d span{font-size:11px;color:var(--label-3);text-transform:uppercase;font-weight:600}
+.t-day-d b{font-size:19px;font-weight:600}
+.t-day.today .t-day-d span,.t-day.today .t-day-d b{color:var(--acc)}
+.t-day-i{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none;
+  background:var(--surface-2);color:var(--label-2);font-size:16px}
+.t-day.k-gym .t-day-i{background:var(--acc-soft);color:var(--acc)}
+.t-day.k-done .t-day-i{background:var(--acc);color:var(--on-acc)}
+.t-day.k-rest .tt{color:var(--label-2)}
+.t-walkrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:var(--hair) solid var(--sep)}
+.t-walkrow:last-child{border-bottom:0}
+.t-walkrow .t-chips{margin-top:0;flex-wrap:nowrap}
+.t-walkrow .chip{padding:5px 9px;font-size:13px}
+.t-big{font-size:30px;font-weight:700;letter-spacing:-.03em}
+
+.t-tabs{align-items:center}
+.t-tabs button{padding-top:6px}
+
+/* ---------------------------------------------------------- onboarding -- */
+.ob{min-height:100vh;display:flex;flex-direction:column;padding-bottom:calc(20px + var(--sab))}
+.ob-top{display:flex;align-items:center;justify-content:space-between;margin:6px 0 22px}
+.ob-prog{display:flex;gap:5px}
+.ob-prog i{width:20px;height:4px;border-radius:2px;background:var(--surface-3)}
+.ob-prog i.on{background:var(--acc)}
+.ob-q{font-size:28px;line-height:1.15;font-weight:700;letter-spacing:-.03em;margin:0 2px 20px}
+.ob-body{flex:1;display:flex;flex-direction:column;gap:10px;animation:obIn .22s var(--ease)}
+@keyframes obIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.ob-choice{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;text-align:left;
+  padding:16px 18px;border-radius:16px;background:var(--surface);box-shadow:inset 0 0 0 1.5px transparent;transition:box-shadow var(--fast)}
+.ob-choice.on{box-shadow:inset 0 0 0 2px var(--acc)}
+.ob-ct{font-size:17px;font-weight:600}
+.ob-cs{font-size:14px;color:var(--label-2);margin-top:2px}
+.ob-tick{width:24px;height:24px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;
+  box-shadow:inset 0 0 0 1.5px var(--label-4);font-size:14px}
+.ob-choice.on .ob-tick{background:var(--acc);color:var(--on-acc);box-shadow:none}
+.ob-days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.ob-day{aspect-ratio:1;border-radius:14px;background:var(--surface);font-size:14px;font-weight:600;color:var(--label-2)}
+.ob-day.on{background:var(--acc);color:var(--on-acc)}
+.ob-hint{font-size:14px;color:var(--label-2);line-height:1.45;margin:2px 2px 4px}
+.ob-sub{font-size:13px;font-weight:600;color:var(--label-2);text-transform:uppercase;letter-spacing:.04em;margin:14px 2px 6px}
+.ob-group .ob-sub{margin-top:8px}
+.ob-gear{display:flex;flex-wrap:wrap;gap:8px}
+.ob-g{display:inline-flex;align-items:center;gap:5px;padding:9px 14px;border-radius:99px;background:var(--surface);font-size:15px}
+.ob-g.on{background:var(--acc);color:var(--on-acc);font-weight:500}
+.ob-g .icn{font-size:13px}
+.ob-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
+.ob-fields label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--label-2)}
+.ob-fields .field{width:100%;min-width:0;background:var(--surface)}
+.ob-foot{position:sticky;bottom:0;padding-top:16px;background:linear-gradient(transparent,var(--bg) 30%)}
+.t-ci{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--surface);
+  border-radius:16px;padding:12px 14px;margin-bottom:12px;cursor:pointer}
+.t-ci>.grow,.t-ci>.coach-ci .grow{flex:1;min-width:0}
+.t-ci .tt{font-size:16px;font-weight:500}
+.t-ci .ss{font-size:13px;color:var(--label-2);margin-top:2px}
+.t-ci-form h2{font-size:17px;font-weight:600;color:var(--label)}
+.coach-grid .field,.t-ci-form .field{background:var(--surface-2);border-radius:10px;padding:10px;text-align:center;min-height:42px}
+.t-ci-form .chip{background:var(--surface-2)}
+.t-ci-form .chip.on{background:var(--acc);color:var(--on-acc)}
